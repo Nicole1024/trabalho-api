@@ -27,25 +27,25 @@
 
         <hr>
 
-        <section id="iss-section">
-            <h2>🛰️ Estação Espacial Internacional (ISS) (API 2/3)</h2>
-            <p>Clique para ver a localização geográfica atual da Estação Espacial Internacional.</p>
-            <input type="button" value="Ver Localização" id="buscarISS"><br>
-            <div id="mostraISS" class="api-output"></div>
+        <section id="lancamento-section">
+            <h2>🛰️ Próximo Grande Lançamento Espacial (API 2/3)</h2>
+            <p>Veja os detalhes do próximo lançamento de foguete confirmado no mundo.</p>
+            <input type="button" value="Buscar Lançamento" id="buscarLancamento"><br>
+            <div id="mostraLancamento" class="api-output"></div>
         </section>
         
         <hr>
 
-        <section id="astronautas-section">
-            <h2>👩‍🚀 Astronautas em Órbita (API 3/3)</h2>
-            <p>Veja quantos e quais astronautas estão no espaço neste momento.</p>
-            <input type="button" value="Buscar Astronautas" id="buscarAstronautas"><br>
-            <div id="mostraAstronautas" class="api-output"></div>
+        <section id="noticias-section">
+            <h2>📰 Notícia Espacial do Momento (API 3/3)</h2>
+            <p>Leia a manchete e o resumo da notícia espacial mais recente.</p>
+            <input type="button" value="Buscar Notícia" id="buscarNoticias"><br>
+            <div id="mostraNoticias" class="api-output"></div>
         </section>
 
         <script>
             
-            // FUNÇÕES DE TRADUÇÃO (API 3)
+            // FUNÇÕES DE TRADUÇÃO (API 3 - MyMemory Translator)
             async function traduzir(texto) {
                 if (!texto) return '';
                 texto = texto.substring(0, 500); 
@@ -85,70 +85,82 @@
             }
             document.querySelector('#buscarSW').addEventListener('click', buscarSW);
             
-            // 5. API OpenNotify ISS Position
-            async function buscarISS() {
-                const painel = document.querySelector('#mostraISS');
-                const url = `http://api.open-notify.org/iss-now.json`;
+            // 5. API Launch Library 2 (Próximo Lançamento)
+            async function buscarProximoLancamento() {
+                const painel = document.querySelector('#mostraLancamento');
+                // Endpoint para o próximo lançamento de foguete confirmado
+                const url = `https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=1`;
 
                 try {
                     let resposta = await fetch(url);
-                    if (!resposta.ok) throw new Error(`Erro na chamada ISS: ${resposta.status}`);
+                    if (!resposta.ok) throw new Error(`Erro na chamada Launch Library: ${resposta.status}`);
                     let js = await resposta.json();
                     
-                    const lat = js.iss_position.latitude;
-                    const lon = js.iss_position.longitude;
-                    const timestamp = new Date(js.timestamp * 1000).toLocaleTimeString('pt-BR');
+                    if (js.results.length === 0) {
+                        painel.innerHTML = "<h3>Nenhum lançamento futuro encontrado no momento.</h3>";
+                        return;
+                    }
+                    
+                    const launch = js.results[0];
+                    const dataPrevista = new Date(launch.net).toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'short' });
+                    
+                    const nomeMissao = launch.mission ? launch.mission.name : 'Nome da Missão Indisponível';
+                    const descricaoTraduzida = await traduzir(launch.mission ? launch.mission.description : 'Detalhes indisponíveis.');
 
                     painel.innerHTML = `
-                        <h3>Localização Atual da ISS</h3>
-                        <p><strong>Latitude:</strong> ${lat}°</p>
-                        <p><strong>Longitude:</strong> ${lon}°</p>
-                        <p><strong>Hora da Última Atualização:</strong> ${timestamp}</p>
-                        <p>🗺️ <a href="https://maps.google.com/maps?q=${lat},${lon}&ll=${lat},${lon}&z=3" target="_blank">Ver no Mapa (Clique aqui)</a></p>
+                        <h3>${launch.name}</h3>
+                        <p><strong>Data Prevista:</strong> ${dataPrevista}</p>
+                        <p><strong>Foguete:</strong> ${launch.rocket.configuration.full_name}</p>
+                        <p><strong>Missão:</strong> ${nomeMissao}</p>
+                        <p><strong>Descrição:</strong> ${descricaoTraduzida}</p>
+                        <p><strong>Local:</strong> ${launch.pad.location.name}</p>
+                        <p>🔗 <a href="${launch.url}" target="_blank">Ver detalhes completos</a></p>
                     `;
 
                 } catch (err) {
-                    painel.innerHTML = `<h3 style="color:red;">Erro ao buscar a localização da ISS: ${err.message}</h3>`;
+                    painel.innerHTML = `<h3 style="color:red;">Erro ao buscar lançamento: ${err.message}</h3>`;
                 }
             }
-            document.querySelector('#buscarISS').addEventListener('click', buscarISS);
+            document.querySelector('#buscarLancamento').addEventListener('click', buscarProximoLancamento);
             
-            // 6. OpenNotify People in Space (NOVA)
-            async function buscarAstronautas() {
-                const painel = document.querySelector('#mostraAstronautas');
-                const url = `http://api.open-notify.org/astros.json`;
+            // 6. API Spaceflight News (Notícias)
+            async function buscarNoticiasEspaciais() {
+                const painel = document.querySelector('#mostraNoticias');
+                // Endpoint para o artigo mais recente (limit=1)
+                const url = `https://api.spaceflightnewsapi.net/v4/articles/?limit=1`;
 
                 try {
                     let resposta = await fetch(url);
-                    if (!resposta.ok) throw new Error(`Erro na chamada Astronautas: ${resposta.status}`);
+                    if (!resposta.ok) throw new Error(`Erro na chamada Spaceflight News: ${resposta.status}`);
                     let js = await resposta.json();
                     
-                    let html = `<h3>${js.number} Pessoas no Espaço Agora</h3>`;
-                    
-                    if (js.number > 0) {
-                        html += `<ul>`;
-                        for (const pessoa of js.people) {
-                            // O nome do astronauta não será traduzido, mas o nome da nave será
-                            const naveTraduzida = await traduzir(pessoa.craft); 
-                            html += `<li><strong>${pessoa.name}</strong> a bordo da nave <strong>${naveTraduzida}</strong>.</li>`;
-                        }
-                        html += `</ul>`;
-                    } else {
-                        html += `<p>Nenhum astronauta em órbita no momento (improvável!)</p>`;
+                    if (js.results.length === 0) {
+                        painel.innerHTML = "<h3>Nenhuma notícia encontrada no momento.</h3>";
+                        return;
                     }
-
-                    painel.innerHTML = html;
+                    
+                    const artigo = js.results[0];
+                    const tituloTraduzido = await traduzir(artigo.title);
+                    const resumoTraduzido = await traduzir(artigo.summary);
+                    
+                    painel.innerHTML = `
+                        <h3>${tituloTraduzido}</h3>
+                        <img src="${artigo.image_url}" alt="${tituloTraduzido}" style="max-width: 100%; height: auto; border-radius: 8px;">
+                        <p><strong>Resumo:</strong> ${resumoTraduzido}</p>
+                        <p><strong>Fonte:</strong> ${artigo.news_site}</p>
+                        <p>🔗 <a href="${artigo.url}" target="_blank">Leia o artigo completo</a></p>
+                    `;
 
                 } catch (err) {
-                    painel.innerHTML = `<h3 style="color:red;">Erro ao buscar astronautas: ${err.message}</h3>`;
+                    painel.innerHTML = `<h3 style="color:red;">Erro ao buscar notícias: ${err.message}</h3>`;
                 }
             }
-            document.querySelector('#buscarAstronautas').addEventListener('click', buscarAstronautas);
+            document.querySelector('#buscarNoticias').addEventListener('click', buscarNoticiasEspaciais);
         </script>
     </main>
 
     <footer>
-        <p>© 2025 Trabalho API - Nicole dos Santos - 2C.</p>
+        <p>© 2025 Trabalho API - Todos os direitos reservados.</p>
     </footer>
 
 </body>
