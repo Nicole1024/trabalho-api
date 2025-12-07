@@ -1,0 +1,175 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+
+body {
+    background: linear-gradient(135deg, #0b0e24, #1c1f3a);
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+}
+
+
+h1 {
+    font-size: 2.4rem;
+    margin-bottom: 15px;
+}
+
+h2 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+img {
+    max-width: 100%;
+    border-radius: 10px;
+    margin-top: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+}
+
+p {
+    max-width: 800px;
+    margin: 10px auto;
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+
+label {
+    display: block;
+    margin-top: 20px;
+    font-size: 1.1rem;
+}
+
+input[type="date"] {
+    margin-top: 8px;
+    padding: 10px;
+    width: 250px;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+    font-size: 1rem;
+    text-align: center;
+}
+
+/* Botão */
+input[type="button"] {
+    margin-top: 15px;
+    padding: 10px 25px;
+    font-size: 1rem;
+    background-color: #0d6efd;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+input[type="button"]:hover {
+    background-color: #0a58ca;
+}
+
+/* Container da resposta */
+#mostra {
+    margin: 40px auto 20px auto;
+    background: #ffffff11;
+    padding: 20px;
+    border-radius: 12px;
+    max-width: 900px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 0 15px rgba(255,255,255,0.1);
+}
+
+#mostra h1 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+}
+
+/* Responsividade */
+@media (max-width: 500px) {
+    h1 { font-size: 1.9rem; }
+    p { padding: 0 10px; }
+    #mostra { padding: 15px; }
+}
+
+header {
+    background-image: linear-gradient(to right, #0b0e24, #1c1f3a, #0b0e24);
+    padding: 10px 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
+    margin-bottom: 30px;
+}
+
+nav {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+nav a {
+    color: #fff;
+    text-decoration: none;
+    padding: 12px 20px; /* Padding maior */
+    border-radius: 20px; /* Bordas mais arredondadas */
+    transition: all 0.3s;
+    font-size: 1.05rem;
+    border: 1px solid transparent;
+}
+
+nav a:hover {
+    background-color: #1c1f3a;
+    border-color: #0d6efd; /* Borda azul ao passar o mouse */
+    color: #0d6efd;
+}
+
+nav a.active {
+    background-color: #0d6efd;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(13, 110, 253, 0.5); /* Efeito de brilho */
+    border-color: #0d6efd;
+}
+
+hr {
+    border: 0;
+    height: 1px;
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0));
+    margin: 40px auto;
+    max-width: 800px;
+}
+
+/* Estiliza as seções de resposta das APIs */
+.api-output, .asteroide-card {
+    margin: 20px auto;
+    padding: 15px;
+    background: #ffffff11;
+    border-radius: 10px;
+    max-width: 800px;
+    text-align: left;
+    backdrop-filter: blur(4px);
+}
+
+.asteroide-card {
+    margin-top: 10px;
+    border-left: 5px solid #0d6efd;
+}
+
+.api-output h3 {
+    margin-top: 0;
+    font-size: 1.4rem;
+    color: #0d6efd;
+}
+
+
+footer {
+    margin-top: 50px;
+    padding: 15px;
+    background-color: #0b0e24;
+    border-top: 1px solid #1c1f3a;
+    width: 100%;
+}

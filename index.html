@@ -1,0 +1,184 @@
+<!DOCTYPE HTML>
+<html lang="pt-BR">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <title>Trabalho API - NASA APOD</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="index.html" class="active">NASA APOD & Asteroides</a>
+            <a href="page2.html">Informações do Espaço (APIs 2)</a>
+        </nav>
+    </header>
+
+    <main>
+        <h1>Trabalho API</h1>
+
+        <section id="apod-section">
+            <h2>🔭 Imagem Astronômica do Dia (APOD)</h2>
+            <img src="img/logotipo-da-nasa.jpg" alt="logotipo da NASA.">
+            <p>A Administração Nacional da Aeronáutica e Espaço (NASA) é a agência espacial dos EUA. Informe uma data abaixo para ver a foto astronômica do dia (APOD):</p>
+            <label for="data">Data:</label>
+            <input type="date" id="data"><br>
+            <input type="button" value="Enviar" id="enviar"><br>
+            <div id="mostra"></div>
+        </section>
+
+        <hr>
+
+        <section id="asteroides-section">
+            <h2>☄️ Asteroides Próximos à Terra:</h2>
+            <p>Verifique a lista de objetos próximos à Terra (Near-Earth Objects - NEOs) na data selecionada.</p>
+            <label for="dataAst">Data:</label>
+            <input type="date" id="dataAst"><br>
+            <input type="button" id="buscarAst" value="Buscar Asteroides"><br>
+            <div id="mostraAst"></div>
+        </section>
+
+        <script>
+            const API_KEY = 'o7yA2Y7e8hCgqHnBMwlJUwxdR2mUVdv2lbcvnjJs';
+
+            // FUNÇÕES DE TRADUÇÃO (API 3)
+            async function traduzir(texto) {
+                if (!texto) return '';
+                texto = texto.substring(0, 500); // limita a 500 caracteres
+                const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(texto)}&langpair=en|pt`;
+                try {
+                    let resposta = await fetch(url);
+                    let js = await resposta.json();
+                    return js.responseData.translatedText;
+                } catch(err) {
+                    // Retorna o texto original em caso de erro na tradução
+                    return texto; 
+                }
+            }
+            
+            async function traduzirGrande(texto) {
+                if (!texto) return '';
+                const tamanho = 500;
+                let resultado = '';
+                
+                // Divide o texto em partes para respeitar o limite da API
+                for (let i = 0; i < texto.length; i += tamanho) {
+                    let parte = texto.substring(i, i + tamanho);
+                    let traduzida = await traduzir(parte);
+                    resultado += traduzida + ' ';
+                }
+                
+                return resultado.trim();
+            }
+            // FIM DAS FUNÇÕES DE TRADUÇÃO
+
+            // 1. Função APOD (API 1)
+            async function consulta(){
+                const data = document.querySelector('#data').value;
+                const painel = document.querySelector('#mostra');
+                
+                if (!data) {
+                    painel.innerHTML = "<h3>Escolha uma data primeiro.</h3>";
+                    return;
+                }
+
+                const url = `https://api.nasa.gov/planetary/apod?api_key=${API_KEY}&date=${data}`;
+                
+                try{
+                    let resposta = await fetch(url);
+                    if (!resposta.ok) {
+                        const erro = await resposta.json();
+                        throw new Error(erro.msg || `Erro na chamada APOD: ${resposta.status}`);
+                    }
+                    let js = await resposta.json();
+                    mostraDados(js);
+                }catch(err) {
+                    painel.innerHTML = `<h3 style="color:red;">Erro ao buscar dados: ${err.message}</h3>`;
+                }
+            }
+            
+            async function mostraDados(js){
+                const painel = document.querySelector('#mostra');
+                
+                let titulo = await traduzir(js.title);
+                let descricao = await traduzirGrande(js.explanation);
+
+                let texto = `<h1>${titulo}</h1>`;
+                
+                if (js.media_type === 'video') {
+                    texto += `<iframe src="${js.url}" frameborder="0" allowfullscreen style="max-width: 100%; height: 400px; border-radius: 10px;"></iframe>`;
+                } else {
+                    texto += `<img src="${js.url}" alt="${js.title}">`;
+                }
+                
+                texto += `<p><strong>Data:</strong> ${js.date}</p>
+                        <p><strong>Descrição:</strong> ${descricao}</p>`;
+                
+                painel.innerHTML = texto;
+            }
+
+            document.querySelector('#enviar').addEventListener('click', consulta);
+
+
+            // 2. Função NEO (Asteroides) (API 2)
+            async function buscarAsteroides() {
+                const data = document.querySelector('#dataAst').value;
+                const painel = document.querySelector('#mostraAst');
+
+                if (!data) {
+                    painel.innerHTML = "<h3>Escolha uma data primeiro.</h3>";
+                    return;
+                }
+
+                const url = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${data}&end_date=${data}&api_key=${API_KEY}`;
+
+                try {
+                    let resposta = await fetch(url);
+                    if (!resposta.ok) {
+                        const erro = await resposta.json();
+                        throw new Error(erro.msg || `Erro na chamada NEO: ${resposta.status}`);
+                    }
+                    
+                    let js = await resposta.json();
+                    let lista = js.near_earth_objects[data];
+
+                    if (!lista || lista.length === 0) {
+                        painel.innerHTML = "<h3>Nenhum asteroide passou perto da Terra nesta data.</h3>";
+                        return;
+                    }
+
+                    let html = `<h1>Asteroides Próximos (${data})</h1>`;
+                    html += `<p>Total de objetos detectados: <strong>${lista.length}</strong></p>`;
+
+                    for (let ast of lista) {
+                        let nomeTraduzido = await traduzir(ast.name); // Traduzindo o nome do asteroide
+                        
+                        html += `
+                            <div class="asteroide-card">
+                                <p><strong>Nome:</strong> ${nomeTraduzido}</p>
+                                <p><strong>Diâmetro (médio):</strong> ${ast.estimated_diameter.meters.estimated_diameter_max.toFixed(1)} m</p>
+                                <p><strong>Velocidade:</strong> ${parseFloat(ast.close_approach_data[0].relative_velocity.kilometers_per_hour).toFixed(0)} km/h</p>
+                                <p><strong>Distância da Terra:</strong> ${parseFloat(ast.close_approach_data[0].miss_distance.kilometers).toFixed(0)} km</p>
+                                <p><strong>É perigoso?</strong> ${ast.is_potentially_hazardous_asteroid ? "<span style='color:red;'>SIM 🚨</span>" : "Não"}</p>
+                            </div>
+                        `;
+                    }
+
+                    painel.innerHTML = html;
+
+                } catch (err) {
+                    painel.innerHTML = `<h3 style="color:red;">Erro ao buscar asteroides: ${err.message}</h3>`;
+                }
+            }
+
+            document.querySelector('#buscarAst').addEventListener('click', buscarAsteroides);
+        </script>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Trabalho API - Nicole dos Santos - 2C.</p>
+    </footer>
+
+</body>
+</html>

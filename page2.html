@@ -1,0 +1,155 @@
+<!DOCTYPE HTML>
+<html lang="pt-BR">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <title>Trabalho API - Informações do Espaço</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="index.html">NASA APOD & Asteroides</a>
+            <a href="page2.html" class="active">Informações do Espaço (APIs 2)</a>
+        </nav>
+    </header>
+
+    <main>
+        <h1>Mais Informações sobre o Espaço</h1>
+
+        <section id="swapi-section">
+            <h2>🚀 Fato Curioso do Universo Star Wars (API 1/3)</h2>
+            <p>Clique no botão para carregar um fato aleatório sobre um planeta do universo Star Wars.</p>
+            <input type="button" value="Buscar Fato" id="buscarSW"><br>
+            <div id="mostraSW" class="api-output"></div>
+        </section>
+
+        <hr>
+
+        <section id="iss-section">
+            <h2>🛰️ Estação Espacial Internacional (ISS) (API 2/3)</h2>
+            <p>Clique para ver a localização geográfica atual da Estação Espacial Internacional.</p>
+            <input type="button" value="Ver Localização" id="buscarISS"><br>
+            <div id="mostraISS" class="api-output"></div>
+        </section>
+        
+        <hr>
+
+        <section id="astronautas-section">
+            <h2>👩‍🚀 Astronautas em Órbita (API 3/3)</h2>
+            <p>Veja quantos e quais astronautas estão no espaço neste momento.</p>
+            <input type="button" value="Buscar Astronautas" id="buscarAstronautas"><br>
+            <div id="mostraAstronautas" class="api-output"></div>
+        </section>
+
+        <script>
+            
+            // FUNÇÕES DE TRADUÇÃO (API 3)
+            async function traduzir(texto) {
+                if (!texto) return '';
+                texto = texto.substring(0, 500); 
+                const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(texto)}&langpair=en|pt`;
+                try {
+                    let resposta = await fetch(url);
+                    let js = await resposta.json();
+                    return js.responseData.translatedText;
+                } catch(err) {
+                    return texto; 
+                }
+            }
+
+            // 4. API Star Wars (SWAPI)
+            async function buscarSW() {
+                const painel = document.querySelector('#mostraSW');
+                const planetaId = Math.floor(Math.random() * 6) + 1; 
+                const url = `https://swapi.dev/api/planets/${planetaId}/`;
+
+                try {
+                    let resposta = await fetch(url);
+                    if (!resposta.ok) throw new Error(`Erro na chamada SWAPI: ${resposta.status}`);
+                    let js = await resposta.json();
+                    
+                    const climaTraduzido = await traduzir(js.climate);
+                    const terrenoTraduzido = await traduzir(js.terrain);
+                    
+                    painel.innerHTML = `
+                        <h3>Planeta: ${js.name}</h3>
+                        <p><strong>Clima:</strong> ${climaTraduzido}</p>
+                        <p><strong>Terreno:</strong> ${terrenoTraduzido}</p>
+                        <p><strong>População:</strong> ${js.population !== 'unknown' ? new Intl.NumberFormat('pt-BR').format(js.population) : 'Desconhecida'}</p>
+                    `;
+                } catch (err) {
+                    painel.innerHTML = `<h3 style="color:red;">Erro ao buscar dado Star Wars: ${err.message}</h3>`;
+                }
+            }
+            document.querySelector('#buscarSW').addEventListener('click', buscarSW);
+            
+            // 5. API OpenNotify ISS Position
+            async function buscarISS() {
+                const painel = document.querySelector('#mostraISS');
+                const url = `http://api.open-notify.org/iss-now.json`;
+
+                try {
+                    let resposta = await fetch(url);
+                    if (!resposta.ok) throw new Error(`Erro na chamada ISS: ${resposta.status}`);
+                    let js = await resposta.json();
+                    
+                    const lat = js.iss_position.latitude;
+                    const lon = js.iss_position.longitude;
+                    const timestamp = new Date(js.timestamp * 1000).toLocaleTimeString('pt-BR');
+
+                    painel.innerHTML = `
+                        <h3>Localização Atual da ISS</h3>
+                        <p><strong>Latitude:</strong> ${lat}°</p>
+                        <p><strong>Longitude:</strong> ${lon}°</p>
+                        <p><strong>Hora da Última Atualização:</strong> ${timestamp}</p>
+                        <p>🗺️ <a href="https://maps.google.com/maps?q=${lat},${lon}&ll=${lat},${lon}&z=3" target="_blank">Ver no Mapa (Clique aqui)</a></p>
+                    `;
+
+                } catch (err) {
+                    painel.innerHTML = `<h3 style="color:red;">Erro ao buscar a localização da ISS: ${err.message}</h3>`;
+                }
+            }
+            document.querySelector('#buscarISS').addEventListener('click', buscarISS);
+            
+            // 6. OpenNotify People in Space (NOVA)
+            async function buscarAstronautas() {
+                const painel = document.querySelector('#mostraAstronautas');
+                const url = `http://api.open-notify.org/astros.json`;
+
+                try {
+                    let resposta = await fetch(url);
+                    if (!resposta.ok) throw new Error(`Erro na chamada Astronautas: ${resposta.status}`);
+                    let js = await resposta.json();
+                    
+                    let html = `<h3>${js.number} Pessoas no Espaço Agora</h3>`;
+                    
+                    if (js.number > 0) {
+                        html += `<ul>`;
+                        for (const pessoa of js.people) {
+                            // O nome do astronauta não será traduzido, mas o nome da nave será
+                            const naveTraduzida = await traduzir(pessoa.craft); 
+                            html += `<li><strong>${pessoa.name}</strong> a bordo da nave <strong>${naveTraduzida}</strong>.</li>`;
+                        }
+                        html += `</ul>`;
+                    } else {
+                        html += `<p>Nenhum astronauta em órbita no momento (improvável!)</p>`;
+                    }
+
+                    painel.innerHTML = html;
+
+                } catch (err) {
+                    painel.innerHTML = `<h3 style="color:red;">Erro ao buscar astronautas: ${err.message}</h3>`;
+                }
+            }
+            document.querySelector('#buscarAstronautas').addEventListener('click', buscarAstronautas);
+        </script>
+    </main>
+
+    <footer>
+        <p>© 2025 Trabalho API - Nicole dos Santos - 2C.</p>
+    </footer>
+
+</body>
+</html>
